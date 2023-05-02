@@ -39,7 +39,7 @@ jobs:
         echo "${{ secrets.SSH_PRIV_KEY}}" > ~/.ssh/ansible
         echo "${{ secrets.SSH_HOST }} ${{ secrets.SSH_PUB_KEY }}"> ~/.ssh/known_hosts
         chmod 600 ~/.ssh/ansible ~/.ssh/known_hosts
-        ansible-playbook -i inventories/app.yaml playbook/app.yaml
+        ansible-playbook -i inventory/worker_hosts playbook/app.yaml
     # - name: Deploy to the servers
     #   uses: appleboy/ssh-action@v0.1.10
     #   env:
