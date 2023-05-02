@@ -4,6 +4,7 @@ on:
   pull_request:
     types:
       - closed
+  push:
 
 jobs:
   check_tag:
@@ -38,7 +39,7 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIV_KEY}}" > ~/.ssh/ansible
         chmod 600 ~/.ssh/ansible
-        ansible-playbook -i inventory/worker_hosts playbook/app.yaml -vvv
+        ansible-playbook -i inventory/worker_hosts playbook/app.yaml --private-key ~/.ssh/ansible -vvv
     # - name: Deploy to the servers
     #   uses: appleboy/ssh-action@v0.1.10
     #   env:
