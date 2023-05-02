@@ -1,0 +1,3 @@
+[workers]
+sg-nme-worker1.simplifypos.com ansible_host=213.190.4.144
+sg-nme-worker2.simplifypos.com ansible_host=156.67.216.76

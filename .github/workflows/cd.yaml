@@ -1,0 +1,50 @@
+name: 'CD'
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  check_tag:
+    runs-on: ubuntu-latest
+    outputs:
+      TAG: ${{ steps.image_tag.outputs.tag }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Dump GitHub context
+      id: github_context_step
+      run: echo '${{ toJSON(github) }}'
+    - name: Get image tag
+      id: image_tag
+      run: |
+        tag=`git log -n1 --format='%B' --no-merges HEAD | awk '/image_tag/ {$1="";print}'|tr -d ' '`
+        echo "tag=$tag" >> $GITHUB_OUTPUT
+  run:
+    if: github.event.pull_request.merged == true && needs.check_tag.outputs.TAG != ''
+    needs: check_tag
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Deploy to the servers
+      uses: appleboy/ssh-action@v0.1.10
+      env:
+        TAG: ${{ needs.check_tag.outputs.TAG }}
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }} # Create a new user: ansible
+        key: ${{ secrets.KEY }} # Create a new key and use it
+        port: ${{ secrets.PORT }}
+        envs: TAG
+        script: | 
+          ansible-playbook -i inventories/app.yaml playbook/app.yaml
+          # docker pull mahfudza16/simplify:$TAG
+          # wget -O docker-compose.yml github_link
+          # untuk .env inject manual
+          # docker-compose up -d
