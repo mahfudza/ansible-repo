@@ -2,9 +2,9 @@
 - name: Deploy app
   hosts: workers
   remote_user: ansible
-
-  tasks:
-  - name: Print hostname
-    shell: hostname
-
-  
+  become: yes
+  become_method: sudo
+  roles:
+  - init
+  - docker
+  - app
