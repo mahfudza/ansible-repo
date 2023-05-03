@@ -30,7 +30,7 @@ jobs:
         tag=`git log -n1 --format='%B' --no-merges HEAD | awk '/image_tag/ {$1="";print}'|tr -d ' '`
         echo "tag=$tag" >> $GITHUB_OUTPUT
   run:
-    if: github.event.pull_request.merged == true && ( needs.check_tag.outputs.TAG != '' || inputs.TAG != '' )
+    if: github.event.pull_request.merged == true && needs.check_tag.outputs.TAG != '' || inputs.TAG != ''
     needs: check_tag
     runs-on: ubuntu-latest
     env:
