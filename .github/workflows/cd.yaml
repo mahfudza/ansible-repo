@@ -38,5 +38,6 @@ jobs:
         ssh-private-key: ${{ secrets.SSH_PRIV_KEY }}
     - name: Deploy
       run: |
+        echo ${{ secrets.VAULT_PASSWORD }} > vault_file
         ansible-playbook -i inventory/worker_hosts playbook/app.yaml --extra-vars "APP_IMAGE_TAG=`echo ${{ needs.check_tag.outputs.TAG }}`" --vault-password-file vault_file -vv
 
