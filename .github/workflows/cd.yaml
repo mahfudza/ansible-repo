@@ -4,6 +4,12 @@ on:
   pull_request:
     types:
       - closed
+  workflow_dispatch:
+    inputs:
+      TAG:
+        description: 'Image tag to deploy'
+        required: true
+        type: string
 
 jobs:
   check_tag:
@@ -24,9 +30,11 @@ jobs:
         tag=`git log -n1 --format='%B' --no-merges HEAD | awk '/image_tag/ {$1="";print}'|tr -d ' '`
         echo "tag=$tag" >> $GITHUB_OUTPUT
   run:
-    if: github.event.pull_request.merged == true && needs.check_tag.outputs.TAG != ''
+    if: github.event.pull_request.merged == true && ( needs.check_tag.outputs.TAG != '' || inputs.TAG != '' )
     needs: check_tag
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.check_tag.outputs.TAG || inputs.TAG }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -39,5 +47,5 @@ jobs:
     - name: Deploy
       run: |
         echo ${{ secrets.VAULT_PASSWORD }} > vault_file
-        ansible-playbook -i inventory/worker_hosts playbook/app.yaml --extra-vars "APP_IMAGE_TAG=`echo ${{ needs.check_tag.outputs.TAG }}`" --vault-password-file vault_file -vv
+        ansible-playbook -i inventory/worker_hosts playbook/app.yaml --extra-vars "APP_IMAGE_TAG=`echo ${{ env.TAG }}`" --vault-password-file vault_file -vv
 
