@@ -3,6 +3,7 @@
 - name: Uninstall old version
   apt:
     name: "{{ item }}"
+    state: absent
   loop:
     - docker 
     - docker-engine

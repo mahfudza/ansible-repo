@@ -3,6 +3,7 @@
   template:
     src: .env.j2
     dest: ~/app/simplify/.env
+  no_log: True
 - name: Copy docker-compose.yaml file
   copy:
     src: docker-compose.yaml
