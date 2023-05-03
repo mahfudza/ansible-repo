@@ -1,0 +1,14 @@
+---
+- name: Set .env
+  template:
+    src: .env.j2
+    dest: ~/app/simplify/.env
+- name: Copy docker-compose.yaml file
+  copy:
+    src: docker-compose.yaml
+    dest: ~/app/simplify/docker-compose.yaml
+  no_log: True
+- name: Run docker-compose
+  command: docker-compose up -d
+  args:
+    chdir: ~/app/simplify/

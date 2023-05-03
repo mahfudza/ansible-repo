@@ -1,0 +1,18 @@
+---
+#install python and pip
+- name: Update package
+  apt:
+    name: "*"
+    state: latest
+- name: Install python3
+  apt:
+    name: python3.8
+    state: present
+- name: Download pip installer script
+  command: curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+- name: Install pip3
+  command: python3 get-pip.py --user
+- name: Install ansible
+  command: python3 -m pip install ansible --user
+# - name: Add location to PATH
+#   command: export PATH="$PATH:/root/.local/bin"

@@ -1,0 +1,54 @@
+---
+
+- name: Uninstall old version
+  apt:
+    name: "{{ item }}"
+  loop:
+    - docker 
+    - docker-engine
+    - docker.io
+    - containerd
+    - runc
+  ignore_errors: true
+- name: Update package
+  apt:
+    name: "*"
+    state: latest
+- name: Install packages to allow apt to use a repository over HTTPS 
+  apt:
+    name: "{{ item }}"
+  loop:
+  - ca-certificates
+  - curl
+  - gnupg
+- name: Add Docker's official GPG key
+  shell: | 
+    install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg --yes \
+    && chmod a+r /etc/apt/keyrings/docker.gpg
+- name: Setup repository
+  shell: |
+    echo \
+    "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+    "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+    sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+- name: Update package
+  apt:
+    name: "*"
+    state: latest
+- name: Install docker engine, containerd, docker-compose
+  apt:
+    name: "{{ item }}"
+  loop:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+- name: Install docker-compose using pip
+  command: pip3 install docker-compose
+- name: Start service
+  systemd:
+    name: docker
+    state: started
+    enabled: yes

@@ -1,0 +1,9 @@
+services:
+  app:
+    image: "mahfudza16/simplify:${APP_IMAGE_TAG}"
+    env_file:
+    - ./.env
+    ports:
+    - 8080:80
+    volumes:
+    - ./public/upload:/var/www/html/public/upload
