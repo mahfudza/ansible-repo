@@ -14,5 +14,5 @@
   command: python3 get-pip.py --user
 - name: Install ansible
   command: python3 -m pip install ansible --user
-# - name: Add location to PATH
-#   command: export PATH="$PATH:/root/.local/bin"
+- name: Add location to PATH
+  shell: export PATH="$PATH:/root/.local/bin/"
