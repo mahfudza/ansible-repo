@@ -4,18 +4,24 @@ on:
   pull_request:
     types:
       - closed
+    paths:
+      - '**/version'
   workflow_dispatch:
     inputs:
       TAG:
         description: 'Image tag to deploy'
         required: true
         type: string
+      ROLE:
+        description: 'Role to deploy'
+        required: true
+        type: string
 
 jobs:
-  check_tag:
+  changes:
     runs-on: ubuntu-latest
     outputs:
-      TAG: ${{ steps.image_tag.outputs.tag }}
+      CHANGED_ROLE: ${{ steps.filter.outputs.roles_files }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -24,17 +30,42 @@ jobs:
     - name: Dump GitHub context
       id: github_context_step
       run: echo '${{ toJSON(github) }}'
-    - name: Get image tag
-      id: image_tag
-      run: |
-        tag=`git log -n1 --format='%B' --no-merges HEAD | awk '/image_tag/ {$1="";print}'|tr -d ' '`
-        echo "tag=$tag" >> $GITHUB_OUTPUT
+    - name: Get the changes
+      id: filter
+      uses: dorny/paths-filter@v2
+      with:
+        list-files: json
+        filters: |
+          roles:
+            - 'roles/**/version'
+  # check_tag:
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     TAG: ${{ steps.image_tag.outputs.tag }}
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v3
+  #     with:
+  #       fetch-depth: 0
+  #   - name: Dump GitHub context
+  #     id: github_context_step
+  #     run: echo '${{ toJSON(github) }}'
+  #   - name: Get image tag
+  #     id: image_tag
+  #     run: |
+  #       tag=`git log -n1 --format='%B' --no-merges HEAD | awk '/image_tag/ {$1="";print}'|tr -d ' '`
+  #       echo "tag=$tag" >> $GITHUB_OUTPUT
   run:
-    if: github.event.pull_request.merged == true && needs.check_tag.outputs.TAG != '' || inputs.TAG != ''
-    needs: check_tag
+    if: github.event.pull_request.merged == true && needs.changes.outputs.CHANGED_ROLE != '' || inputs.TAG != '' && inputs.ROLE != ''
+    needs: changes
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        roles: ${{ fromJson(needs.changes.outputs.CHANGED_ROLE) }}
     env:
-      TAG: ${{ needs.check_tag.outputs.TAG || inputs.TAG }}
+      TAG: ${{ inputs.TAG }}
+      ROLE: ${{ inputs.ROLE }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -44,8 +75,20 @@ jobs:
       uses: webfactory/ssh-agent@v0.8.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIV_KEY }}
+    - name: Check the changed role
+      if: needs.changes.outputs.CHANGED_ROLE != ''
+      run: |
+        echo '${{ toJson(needs.changes.outputs.CHANGED_ROLE) }}'
+    - name: roles
+      if: needs.changes.outputs.CHANGED_ROLE != ''
+      id: role
+      run: |
+        role=`echo ${{ matrix.roles }} | cut -d'/' -f2`
+        version=`cat ${{ matrix.roles }}`
+        echo "role=$role" >> $GITHUB_OUTPUT
+        echo "version=$version" >> $GITHUB_OUTPUT
     - name: Deploy
       run: |
         echo ${{ secrets.VAULT_PASSWORD }} > vault_file
-        ansible-playbook -i inventory/worker_hosts playbook/app.yaml --extra-vars "APP_IMAGE_TAG=`echo ${{ env.TAG }}`" --vault-password-file vault_file -vv
+        ansible-playbook -i inventory/worker_hosts playbook/app.yaml --tag="${{ steps.role.outputs.role || env.ROLE  }}" --extra-vars "APP_IMAGE_TAG=`echo ${{ steps.role.outputs.version || env.TAG }}`" --vault-password-file vault_file -vv
 
