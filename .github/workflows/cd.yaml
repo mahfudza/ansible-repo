@@ -63,7 +63,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        roles: ${{ fromJson(needs.changes.outputs.CHANGED_ROLE) }}
+        roles: ${{ fromJson(needs.changes.outputs.CHANGED_ROLE) || join(inputs.ROLE) }}
     env:
       TAG: ${{ inputs.TAG }}
       ROLE: ${{ inputs.ROLE }}
