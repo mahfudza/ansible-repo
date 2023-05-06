@@ -5,6 +5,6 @@
   become: yes
   become_method: sudo
   roles:
-  - init
-  - docker
-  - app
+  - { role: init, tags: init }
+  - { role: docker, tags: docker }
+  - { role: app, tags: app }

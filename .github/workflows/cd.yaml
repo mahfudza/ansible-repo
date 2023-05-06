@@ -34,6 +34,7 @@ jobs:
       id: filter
       uses: dorny/paths-filter@v2
       with:
+        token: ${{ secrets.GITHUB_TOKEN }}
         list-files: json
         filters: |
           roles:
@@ -90,5 +91,5 @@ jobs:
     - name: Deploy
       run: |
         echo ${{ secrets.VAULT_PASSWORD }} > vault_file
-        ansible-playbook -i inventory/worker_hosts playbook/app.yaml --tag="${{ steps.role.outputs.role || env.ROLE  }}" --extra-vars "APP_IMAGE_TAG=`echo ${{ steps.role.outputs.version || env.TAG }}`" --vault-password-file vault_file -vv
+        ansible-playbook -i inventory/worker_hosts playbook/app.yaml --tag "${{ steps.role.outputs.role || env.ROLE  }}" --extra-vars "APP_IMAGE_TAG=`echo ${{ steps.role.outputs.version || env.TAG }}`" --vault-password-file vault_file -vv
 
