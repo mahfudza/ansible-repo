@@ -75,10 +75,11 @@ jobs:
     - name: roles
       id: role
       run: |
-        role=`echo ${{ matrix.roles }} | cut -d'/' -f2`
+        role=`echo ${{ matrix.roles }} | cut -d'/' -f3`
         version=`cat ${{ matrix.roles }}`
         echo "role=$role" >> $GITHUB_OUTPUT
         echo "version=$version" >> $GITHUB_OUTPUT
+        echo $role.$version
     - name: Deploy
       run: |
         echo ${{ secrets.VAULT_PASSWORD }} > vault_file
