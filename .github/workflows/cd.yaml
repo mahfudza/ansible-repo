@@ -36,7 +36,7 @@ jobs:
         list-files: json
         filters: |
           roles:
-            - 'roles/**/version'
+            - 'playbook/roles/**/version'
   # check_tag:
   #   runs-on: ubuntu-latest
   #   outputs:
@@ -98,6 +98,6 @@ jobs:
     - name: Deploy
       run: |
         echo ${{ secrets.VAULT_PASSWORD }} > vault_file
-        ansible-playbook -i inventory/worker_hosts playbook/app.yaml --tag "${{ inputs.ROLE  }}" --extra-vars "APP_IMAGE_TAG=`echo ${{ inputs.TAG }}`" --vault-password-file vault_file -vv
+        ansible-playbook -i inventory/worker_hosts playbook/app.yaml --tags "${{ inputs.ROLE  }}" --extra-vars "APP_IMAGE_TAG=`echo ${{ inputs.TAG }}`" --vault-password-file vault_file -vvv
 
 
