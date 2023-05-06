@@ -25,8 +25,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
     - name: Dump GitHub context
       id: github_context_step
       run: echo '${{ toJSON(github) }}'
@@ -57,31 +55,24 @@ jobs:
   #       tag=`git log -n1 --format='%B' --no-merges HEAD | awk '/image_tag/ {$1="";print}'|tr -d ' '`
   #       echo "tag=$tag" >> $GITHUB_OUTPUT
   run:
-    if: github.event.pull_request.merged == true && needs.changes.outputs.CHANGED_ROLE != '' || inputs.TAG != '' && inputs.ROLE != ''
+    if: github.event.pull_request.merged == true && needs.changes.outputs.CHANGED_ROLE != ''
     needs: changes
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        roles: ${{ fromJson(needs.changes.outputs.CHANGED_ROLE) || join(inputs.ROLE) }}
-    env:
-      TAG: ${{ inputs.TAG }}
-      ROLE: ${{ inputs.ROLE }}
+        roles: ${{ fromJson(needs.changes.outputs.CHANGED_ROLE) }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
     - name: webfactory/ssh-agent
       uses: webfactory/ssh-agent@v0.8.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIV_KEY }}
     - name: Check the changed role
-      if: needs.changes.outputs.CHANGED_ROLE != ''
       run: |
         echo '${{ toJson(needs.changes.outputs.CHANGED_ROLE) }}'
     - name: roles
-      if: needs.changes.outputs.CHANGED_ROLE != ''
       id: role
       run: |
         role=`echo ${{ matrix.roles }} | cut -d'/' -f2`
@@ -91,5 +82,22 @@ jobs:
     - name: Deploy
       run: |
         echo ${{ secrets.VAULT_PASSWORD }} > vault_file
-        ansible-playbook -i inventory/worker_hosts playbook/app.yaml --tag "${{ steps.role.outputs.role || env.ROLE  }}" --extra-vars "APP_IMAGE_TAG=`echo ${{ steps.role.outputs.version || env.TAG }}`" --vault-password-file vault_file -vv
+        ansible-playbook -i inventory/worker_hosts playbook/app.yaml --tag "${{ steps.role.outputs.role }}" --extra-vars "APP_IMAGE_TAG=`echo ${{ steps.role.outputs.version }}`" --vault-password-file vault_file -vv
+
+  run_from_input:
+    if: inputs.TAG != '' && inputs.ROLE != ''
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: webfactory/ssh-agent
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIV_KEY }}
+    - name: Deploy
+      run: |
+        echo ${{ secrets.VAULT_PASSWORD }} > vault_file
+        ansible-playbook -i inventory/worker_hosts playbook/app.yaml --tag "${{ inputs.ROLE  }}" --extra-vars "APP_IMAGE_TAG=`echo ${{ inputs.TAG }}`" --vault-password-file vault_file -vv
+
 
